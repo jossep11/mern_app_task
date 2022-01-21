@@ -1,5 +1,6 @@
 import { React, useState, useEffect } from "react";
 import axios from "axios";
+import { useParams } from "react-router-dom";
 
 const initailForm = {
   author: "",
@@ -10,12 +11,21 @@ const initailForm = {
 function CreateNotes() {
   const [quote, setQuote] = useState([]);
   const [data, setData] = useState(initailForm);
+  const [edit, setEdit] = useState(false);
 
   // const [title, setTitle] = useState("");
   // const [note, setNote] = useState("");
+  const { id } = useParams();
 
   useEffect(() => {
     getUsers();
+    console.log(id);
+    if (id) {
+      setEdit(true);
+      dataUpdate();
+    } else {
+      setEdit(false);
+    }
   }, []);
 
   const onSubmit = async (e) => {
@@ -25,16 +35,39 @@ function CreateNotes() {
     let titlecheck = data.title.trim();
     let notecheck = data.note.trim();
     console.log(authorcheck + " " + titlecheck + " " + notecheck);
-    if (authorcheck === "" || titlecheck === "" || notecheck === "") {
-      console.log("you cannot do this");
+    if (edit === false) {
+      if (authorcheck === "" || titlecheck === "" || notecheck === "") {
+        console.log("you cannot do this");
+      } else {
+        await axios.post("http://localhost:4000/api/notes", {
+          title: data.title,
+          author: data.author,
+          note: data.note,
+        });
+        setData({ author: "", title: "", note: "" });
+      }
     } else {
-      await axios.post("http://localhost:4000/api/notes", {
-        title: data.title,
-        author: data.author,
-        note: data.note,
-      });
-      setData({ author: "", title: "", note: "" });
+      if (authorcheck === "" || titlecheck === "" || notecheck === "") {
+        console.log("you cannot do this");
+      } else {
+        await axios.put(`http://localhost:4000/api/notes/${id}`, {
+          title: data.title,
+          author: data.author,
+          note: data.note,
+        });
+        setData({ author: "", title: "", note: "" });
+        getUsers();
+      }
     }
+  };
+
+  const dataUpdate = async (e) => {
+    const res = await axios.get(`http://localhost:4000/api/notes/${id}`);
+    setData({
+      author: res.data.author,
+      title: res.data.title,
+      note: res.data.note,
+    });
   };
 
   const onInputChange = (e) => {
@@ -98,7 +131,7 @@ function CreateNotes() {
           </div>
 
           <button type="submit" className="btn btn-primary btn_send">
-            Save
+            {edit === false ? "Save" : "Edit"}
           </button>
         </form>
       </div>
